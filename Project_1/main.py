@@ -81,7 +81,7 @@ def main(argv):
     e = int(argv[2]) #e = 10000
     hasLogging = argv[5].lower() == "true"
     # calculate k to avoid hash collisions with given e
-    k = math.ceil(math.log2(e)) * 2 # k = math.ceil(math.log2(e)) (?)
+    k = math.ceil(math.log2((e * (e-1))/2))
     # Create DHT Ring
     d = DHT(k, n, hasLogging)
     calculateHashCollisionEstimate(d, e)
