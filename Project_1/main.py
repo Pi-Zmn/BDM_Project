@@ -1,25 +1,81 @@
 import math
+import sys, getopt
 
 from PChordLib.dht import *
 from random import randint
 
-k = 20
+# Add node
+def addNode(d, iD, nodes):
+    did_create_node = False
+    while not did_create_node:
+        node = Node(iD)
+        did_create_node = d.join(node)
+        if did_create_node:
+            nodes.append(node)
 
-d = DHT(k)
+# Add all Nodes to Ring
+def insertNodes(d, s, k, distribution, nodes):
+    for i in range(s - 1): # subtract one because DHT has 1 (start_node) on initialization
+        nodeID = None
+        if distribution == "random":
+            nodeID = randint(0, int(math.pow(2, k)))
+        elif distribution == "equal":
+            equal_distance = math.ceil(d._size / s)
+            nodeID = equal_distance + i * equal_distance
+        elif distribution == "hash":
+            # TODO: Implement better hash function
+            nodeID = d.getHashId(hash("Node-" + str(i)))
+        addNode(d, nodeID, nodes)
+    d.updateAllFingerTables()
 
-number_of_nodes = 10
+# Add Key-Value Pais
+def insertData(d, e, k, n, insertStrategy, index):
+    for i in range(e):
+        key = None
+        if insertStrategy == "random":
+            key = randint(0, int(math.pow(2, k) - 1))
+        elif insertStrategy == "equal":
+            equal_distance = math.ceil(d._size / e)
+            key = equal_distance + i * equal_distance
+        elif insertStrategy == "hash":
+            value = "Value-" + str(i)
+            key = d.getHashId(hash(value))
+        d.store(d._startNode, key, "Value for Key " + str(key), True)
+        index[i] = key
 
-# Add nodes
-for i in range(number_of_nodes - 1):
-    r = randint(0, int(math.pow(2, k)))
-    d.join(Node(r))
+def calculateHashCollisionEstimate(d, e):
+    collison_prob = math.ceil((e * (e - 1)) / (2 * d._size))
+    print("Hash Collision probability: C = M * (M-1) / 2T = ", colored(str(collison_prob), "red"))
 
-d.updateAllFingerTables()
+def main(argv):
+    print(argv)
+    s = int(argv[0]) #s = 10
+    n = int(argv[1]) #n = 3
+    e = int(argv[2]) #e = 10000
+    hasLogging = argv[5].lower() == "true"
+    # calculate k to avoid hash collisions with given e
+    k = math.ceil(math.log2(e)) * 2 # k = math.ceil(math.log2(e)) (?)
+    # Create DHT Ring
+    d = DHT(k, hasLogging)
+    calculateHashCollisionEstimate(d, e)
 
-print("Chord Ring created with ", d.getNumNodes(), " Nodes")
+    nodes = [d._startNode]  # holds all created Node Objects
+    index = dict()          # holds all IDs of created Data
 
-for i in range(5, 1024, 10):
-    d.store(d._startNode, i, "hello" + str(i))
+    distribution = argv[3] # "equal" | "random"
+    insertStrategy = argv[4] # "equal" | "random" | "hash"
 
-for i in range(5, 200, 10):
-    print(d.lookup(d._startNode, i))
+    insertNodes(d, s, k, distribution, nodes)
+    insertData(d, e, k, n, insertStrategy, index)
+    d.getMetaData()
+    # TODO: d.PlotDistribution() Function
+
+    #for i in range(5, 200, 10):
+    #    print(d.lookup(d._startNode, i))
+
+    #for n in nodes:
+        #n.toString()
+    #    n.dataDistribution(e, s)
+
+if __name__ == "__main__":
+   main(sys.argv[1:])
