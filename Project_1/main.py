@@ -4,6 +4,13 @@ import time
 
 from PChordLib.dht import *
 from random import randint
+import hashlib
+
+# Returns HASH value as INT of string input
+def intHash(value):
+    sha1 = hashlib.sha256()
+    sha1.update(value.encode('utf-8'))
+    return int(sha1.hexdigest(), 16)
 
 # Add node
 def addNode(d, iD, nodes):
@@ -24,8 +31,7 @@ def insertNodes(d, s, k, distribution, nodes):
             equal_distance = math.ceil(d._size / s)
             nodeID = equal_distance + i * equal_distance
         elif distribution == "hash":
-            # TODO: Implement better hash function
-            nodeID = d.getHashId(hash("Node-" + str(i)))
+            nodeID = d.getHashId(intHash(str(i)))
         addNode(d, nodeID, nodes)
     d.updateAllFingerTables()
 
@@ -39,25 +45,35 @@ def insertData(d, e, k, n, insertStrategy, index):
             equal_distance = math.ceil(d._size / e)
             key = equal_distance + i * equal_distance
         elif insertStrategy == "hash":
-            value = "Value-" + str(i)
-            key = d.getHashId(hash(value))
-        d.store(d._startNode, key, "Value for Key " + str(key), True)
-        index[i] = key
+            key = d.getHashId(intHash(str(i)))
+        value = "Value for Key " + str(i)
+        d.store(d._startNode, key, value, True)
+        #index[i] = key
+        index[i] = value
 
 def calculateHashCollisionEstimate(d, e):
     collison_prob = math.ceil((e * (e - 1)) / (2 * d._size))
     print("Hash Collision probability: C = M * (M-1) / 2T = ", colored(str(collison_prob), "red"))
 
 # Create a Bar plot with horizontal threshold
-def barPlot(x, y, threshold, title):
+def barPlot(x, y, threshold, title, savePNG):
     plt.bar(x, y)
     plt.axhline(y=threshold, xmin=0, xmax=1, color='red', linestyle='--')
     plt.xlabel("Nodes")
     plt.ylabel("Data Sets")
     plt.suptitle(title)
-    filePath = 'assets/' + title + "-" + time.strftime("%Y%m%d-%H%M%S") + '.png'
-    plt.savefig(filePath, dpi=300, bbox_inches='tight')
+    if savePNG:
+        filePath = 'assets/' + title + "-" + time.strftime("%Y%m%d-%H%M%S") + '.png'
+        plt.savefig(filePath, dpi=300, bbox_inches='tight')
     plt.show()
+
+def test_hashAllocation(d, index):
+    for k in index:
+        found = d.lookup(d._startNode, d.getHashId(intHash(str(k))))
+        if not found == index[k]:
+            print(colored("Hash Allocation Failed!", "red"))
+            print(found, index[k])
+
 def main(argv):
     print(argv)
     s = int(argv[0]) #s = 10
@@ -81,7 +97,10 @@ def main(argv):
 
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
-            (distribution + "_" + insertStrategy))
+            (distribution + "_" + insertStrategy), False)
+
+    if distribution == "hash" and insertStrategy == "hash":
+        test_hashAllocation(d, index)
 
     #for i in range(5, 200, 10):
     #    print(d.lookup(d._startNode, i))
