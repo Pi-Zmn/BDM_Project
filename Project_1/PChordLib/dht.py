@@ -110,9 +110,23 @@ class DHT:
             if self._logging:
                 print(colored("Hash collision on insert", "red"))
         nodeForKey.data[key] = value
-        for n in range(1, self._n):
-            # NOTE: Hash Collision impossible here
-            nodeForKey.fingerTable[n - 1].data[key] = "Replication! " + str(value)
+        replicationNodes = [nodeForKey]
+        uniqueFingerTabel = set(nodeForKey.fingerTable)
+        counter = 0
+        while len(replicationNodes) < self._n or counter < 3:
+            # NOTE: Hash Collisions are impossible here
+            for node in uniqueFingerTabel:
+                if not node.ID in [e.ID for e in replicationNodes]:
+                    node.data[key] = "Replication! " + str(value)
+                    replicationNodes.append(node)
+                    if len(replicationNodes) >= self._n:
+                        return
+            # not enough next_nodes in fingertable for n replicas
+            # get fingertable of next_node
+            uniqueFingerTabel = set(uniqueFingerTabel.pop().fingerTable)
+            counter += 1 # preventing endless loop
+        print(colored("Could not create " + str(self._n) + " replicas"), "red")
+        return
 
     # When new node joins the system
     def join(self, newNode):

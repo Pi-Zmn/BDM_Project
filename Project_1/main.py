@@ -76,6 +76,7 @@ def test_hashAllocation(d, index):
 
 def main(argv):
     print(argv)
+    # TODO: if argv emtpty use default values
     s = int(argv[0]) #s = 10
     n = int(argv[1]) #n = 3
     e = int(argv[2]) #e = 10000
