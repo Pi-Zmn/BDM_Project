@@ -1,6 +1,10 @@
 # A Distributed Hash Table implementation
 import json
+from copy import deepcopy
+
 from termcolor import colored
+import matplotlib.pyplot as plt
+import datetime
 
 class Node:
     def __init__(self, ID, nxt = None, prev = None):
@@ -175,7 +179,7 @@ class DHT:
             node = node.fingerTable[0]
             size += len(node.data)
         return size
-    def getMetaData(self):
+    def getDataDistribution(self):
         numNodes = self.getNumNodes()
         dataSize = self.getSizeOfDataSet()
         print(colored(str(numNodes), "green"), "\tNodes")
@@ -185,6 +189,9 @@ class DHT:
 
         node = self._startNode
         node.dataDistribution(dataSize, numNodes)
+        dataOnNodes = [len(node.data)]
         while node.fingerTable[0] != self._startNode:
             node = node.fingerTable[0]
             node.dataDistribution(dataSize, numNodes)
+            dataOnNodes.append(len(node.data))
+        return (range(0, numNodes), dataOnNodes, (dataSize/numNodes))

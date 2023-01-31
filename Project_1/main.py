@@ -1,5 +1,6 @@
 import math
 import sys, getopt
+import time
 
 from PChordLib.dht import *
 from random import randint
@@ -47,6 +48,16 @@ def calculateHashCollisionEstimate(d, e):
     collison_prob = math.ceil((e * (e - 1)) / (2 * d._size))
     print("Hash Collision probability: C = M * (M-1) / 2T = ", colored(str(collison_prob), "red"))
 
+# Create a Bar plot with horizontal threshold
+def barPlot(x, y, threshold, title):
+    plt.bar(x, y)
+    plt.axhline(y=threshold, xmin=0, xmax=1, color='red', linestyle='--')
+    plt.xlabel("Nodes")
+    plt.ylabel("Data Sets")
+    plt.suptitle(title)
+    filePath = 'assets/' + title + "-" + time.strftime("%Y%m%d-%H%M%S") + '.png'
+    plt.savefig(filePath, dpi=300, bbox_inches='tight')
+    plt.show()
 def main(argv):
     print(argv)
     s = int(argv[0]) #s = 10
@@ -62,13 +73,15 @@ def main(argv):
     nodes = [d._startNode]  # holds all created Node Objects
     index = dict()          # holds all IDs of created Data
 
-    distribution = argv[3] # "equal" | "random"
+    distribution = argv[3] # "equal" | "random" | "hash"
     insertStrategy = argv[4] # "equal" | "random" | "hash"
 
     insertNodes(d, s, k, distribution, nodes)
     insertData(d, e, k, n, insertStrategy, index)
-    d.getMetaData()
-    # TODO: d.PlotDistribution() Function
+
+    distribution_tupel = d.getDataDistribution()
+    barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
+            (distribution + "_" + insertStrategy))
 
     #for i in range(5, 200, 10):
     #    print(d.lookup(d._startNode, i))
