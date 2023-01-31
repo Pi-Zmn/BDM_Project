@@ -33,12 +33,13 @@ class Node:
 
 class DHT:
     # The total number of IDs available in the DHT is 2 ** k
-    def __init__(self, k, logging):
+    def __init__(self, k, n, logging):
         self._logging = logging
         self._insert_hash_collisions = 0
 
         self._k = k
         self._size = 2 ** k
+        self._n = n
         self._startNode = Node(0, k)
         self._startNode.fingerTable[0] = self._startNode
         self._startNode.prev = self._startNode
@@ -109,7 +110,9 @@ class DHT:
             if self._logging:
                 print(colored("Hash collision on insert", "red"))
         nodeForKey.data[key] = value
-        # TODO: ADD REPLICATION
+        for n in range(1, self._n):
+            # NOTE: Hash Collision impossible here
+            nodeForKey.fingerTable[n - 1].data[key] = "Replication! " + str(value)
 
     # When new node joins the system
     def join(self, newNode):
@@ -185,6 +188,7 @@ class DHT:
         print(colored(str(numNodes), "green"), "\tNodes")
         print(colored(str(dataSize), "blue"), "\tKey-Value Pairs")
         print(colored(str(self._size), "cyan"), "\tSize")
+        print(colored(str(self._n), "yellow"), "\tReplicas")
         print(colored(str(self._insert_hash_collisions), "red"), "\tHash Collisions occurred during data insertion")
 
         node = self._startNode

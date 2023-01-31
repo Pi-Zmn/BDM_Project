@@ -36,7 +36,7 @@ def insertNodes(d, s, k, distribution, nodes):
     d.updateAllFingerTables()
 
 # Add Key-Value Pais
-def insertData(d, e, k, n, insertStrategy, index):
+def insertData(d, e, k, insertStrategy, index):
     for i in range(e):
         key = None
         if insertStrategy == "random":
@@ -83,7 +83,7 @@ def main(argv):
     # calculate k to avoid hash collisions with given e
     k = math.ceil(math.log2(e)) * 2 # k = math.ceil(math.log2(e)) (?)
     # Create DHT Ring
-    d = DHT(k, hasLogging)
+    d = DHT(k, n, hasLogging)
     calculateHashCollisionEstimate(d, e)
 
     nodes = [d._startNode]  # holds all created Node Objects
@@ -93,7 +93,7 @@ def main(argv):
     insertStrategy = argv[4] # "equal" | "random" | "hash"
 
     insertNodes(d, s, k, distribution, nodes)
-    insertData(d, e, k, n, insertStrategy, index)
+    insertData(d, e, k, insertStrategy, index)
 
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
@@ -106,7 +106,7 @@ def main(argv):
     #    print(d.lookup(d._startNode, i))
 
     #for n in nodes:
-        #n.toString()
+     #   n.toString()
     #    n.dataDistribution(e, s)
 
 if __name__ == "__main__":
