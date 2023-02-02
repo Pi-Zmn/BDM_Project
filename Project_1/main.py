@@ -64,7 +64,7 @@ def barPlot(x, y, threshold, title, savePNG):
     if savePNG:
         filePath = 'assets/' + title + "-" + time.strftime("%Y%m%d-%H%M%S") + '.png'
         plt.savefig(filePath, dpi=300, bbox_inches='tight')
-    plt.show()
+    #plt.show()
 
 def test_hashAllocation(d, index):
     for k in index:
@@ -72,6 +72,18 @@ def test_hashAllocation(d, index):
         if not found == index[k]:
             print(colored("Hash Allocation Failed!", "red"))
             print(found, index[k])
+
+def write_workload(w, d, k, index):
+    for rW in range(1, w):
+        # check if ID already in use
+        iD = 1
+        while iD in index:
+            iD = randint(0, int(math.pow(2, k) - 1))
+        key = d.getHashId(intHash(str(iD)))
+        value = "Random Value-" + str(rW)
+        d.store(d._startNode, key, value, True)
+        if (rW % 500000 == 0):
+            print("writing random data...")
 
 def main(argv):
     print(argv)
@@ -104,20 +116,29 @@ def main(argv):
     #    test_hashAllocation(d, index)
 
     # write to a random Key
-    for rW in range(1, w):
-        # check if ID already in use
-        iD = 1
-        while iD in index:
-            iD = randint(0, int(math.pow(2, k) - 1))
-        key = d.getHashId(intHash(str(iD)))
-        value = "Random Value-" + str(rW)
-        d.store(d._startNode, key, value, True)
-        if (rW % 500000 == 0):
-            print("writing random data...")
+    write_workload(w, d, k, index)
 
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
             (distribution + "_" + insertStrategy), False)
+
+    while s <= 30:
+        # add 5 servers 
+        for i in range(1,5):
+            s += 1
+            nodeID = d.getHashId(intHash(str(s)))
+            addNode(d, nodeID, nodes) 
+        # do workload
+        write_workload(w, d, k, index)
+
+        # get distribution and create plot
+        distribution_tupel = d.getDataDistribution()    
+        barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
+        (distribution + "_" + insertStrategy), True)
+
+
+
+
 
     #for i in range(5, 200, 10):
     #    print(d.lookup(d._startNode, i))
