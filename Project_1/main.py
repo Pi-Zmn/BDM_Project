@@ -97,9 +97,9 @@ def main(argv):
     w = 1000000
     hasLogging = argv[5].lower() == "true"
     # calculate k to avoid hash collisions with given e
-    #k = math.ceil(math.log2((e * (e-1))/2))
+    k = math.ceil(math.log2((e * (e-1))/2))
     # calculate k to avoid hash collisions for 4.000.000 unique values
-    k = math.ceil(math.log2((4000000 * (4000000-1))/2))
+    #k = math.ceil(math.log2((4000000 * (4000000-1))/2))
     # Create DHT Ring
     d = DHT(k, n, hasLogging)
     calculateHashCollisionEstimate(d, e)
@@ -110,18 +110,31 @@ def main(argv):
     distribution = argv[3] # "equal" | "random" | "hash"
     insertStrategy = argv[4] # "equal" | "random" | "hash"
 
+    textFile1 = open('assets/' + "writeDistribution" + "-" + time.strftime("%Y%m%d-%H%M%S") + ".txt", "w")
+    textFile2 = open('assets/' + "hashCollisions" + "-" + time.strftime("%Y%m%d-%H%M%S") + ".txt", "w")
+    textFile3 = open('assets/' + "jumps" + "-" + time.strftime("%Y%m%d-%H%M%S") + ".txt", "w")
+
     insertNodes(d, s, k, distribution, nodes)
     insertData(d, e, k, insertStrategy, index)
 
+    for n in nodes:
+        textFile1.write("Node\t" + str(n.ID) + ":\t" + str(n.numberOfWrites) + " write Operations\r\n")
+    textFile1.write("--------------------------------------------------------------------\r\n")
+
+    textFile2.write("Cluster with " + str(d.getNumNodes()) + " had "
+                    + str(d._insert_hash_collisions) + " for w=" + str(w) + "\r\n")
+    textFile2.write("------------------------\r\n")
+
+    textFile3.write("Cluster with " + str(d.getNumNodes()) + " had "
+                    + str(d._totalMassages) + " for w=" + str(w) + "\r\n")
+    textFile3.write("------------------------\r\n")
+
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
-           (distribution + "_" + insertStrategy), False)
+           (distribution + "_" + insertStrategy), True)
 
     #if distribution == "hash" and insertStrategy == "hash":
     #    test_hashAllocation(d, index)
-
-    textFile1 = open('assets/' + "writeDistribution" + "-" + time.strftime("%Y%m%d-%H%M%S") + ".txt", "w")
-    textFile2 = open('assets/' + "hashCollisions" + "-" + time.strftime("%Y%m%d-%H%M%S") + ".txt", "w")
 
     # write to a random Key
     write_workload(w, d, k, index)
@@ -132,6 +145,10 @@ def main(argv):
     textFile2.write("Cluster with " + str(d.getNumNodes()) + " had "
                     + str(d._insert_hash_collisions) + " for w=" + str(w) + "\r\n")
     textFile2.write("------------------------\r\n")
+
+    textFile3.write("Cluster with " + str(d.getNumNodes()) + " had "
+                    + str(d._totalMassages) + " for w=" + str(w) + "\r\n")
+    textFile3.write("------------------------\r\n")
 
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
@@ -153,6 +170,10 @@ def main(argv):
         textFile2.write("Cluster with " + str(d.getNumNodes()) + " had "
                         + str(d._insert_hash_collisions) + " for w=" + str(w) + "\r\n")
         textFile2.write("------------------------\r\n")
+
+        textFile3.write("Cluster with " + str(d.getNumNodes()) + " had "
+                        + str(d._totalMassages) + " for w=" + str(w) + "\r\n")
+        textFile3.write("------------------------\r\n")
 
         # get distribution and create plot
         distribution_tupel = d.getDataDistribution()

@@ -81,10 +81,12 @@ class DHT:
             if curr.ID == hashId:
                 if self._logging:
                     print(colored("number of jumps: " + str(numJumps), "green"))
+                self._totalMassages = self._totalMassages + numJumps
                 return curr
             if self.distance(curr.ID, hashId) <= self.distance(curr.fingerTable[0].ID, hashId):
                 if self._logging:
                     print(colored("number of jumps: " + str(numJumps), "green"))
+                self._totalMassages = self._totalMassages + numJumps
                 return curr.fingerTable[0]
             tabSize = len(curr.fingerTable)
             i = 0
