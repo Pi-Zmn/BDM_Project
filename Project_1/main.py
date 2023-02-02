@@ -66,7 +66,7 @@ def barPlot(x, y, threshold, title, savePNG):
     if savePNG:
         filePath = 'assets/' + title + "-" + time.strftime("%Y%m%d-%H%M%S") + '.png'
         plt.savefig(filePath, dpi=300, bbox_inches='tight')
-    #plt.show()
+    plt.show()
     plt.clf()
 
 def test_hashAllocation(d, index):
@@ -85,8 +85,6 @@ def write_workload(w, d, k, index):
         key = d.getHashId(intHash(str(iD)))
         value = "Random Value-" + str(rW)
         d.store(d._startNode, key, value, True)
-        if (rW % 500000 == 0):
-            print("writing random data...")
 
 def main(argv):
     print(argv)
@@ -97,9 +95,9 @@ def main(argv):
     w = 1000000
     hasLogging = argv[5].lower() == "true"
     # calculate k to avoid hash collisions with given e
-    k = math.ceil(math.log2((e * (e-1))/2))
+    #k = math.ceil(math.log2((e * (e-1))/2))
     # calculate k to avoid hash collisions for 4.000.000 unique values
-    #k = math.ceil(math.log2((4000000 * (4000000-1))/2))
+    k = math.ceil(math.log2((5000000 * (5000000-1))/2))
     # Create DHT Ring
     d = DHT(k, n, hasLogging)
     calculateHashCollisionEstimate(d, e)
@@ -152,7 +150,7 @@ def main(argv):
 
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
-            (distribution + "_" + insertStrategy), False)
+            (distribution + "_" + insertStrategy), True)
 
     while s < 30:
         # add 5 servers 
