@@ -1,5 +1,6 @@
 # A Distributed Hash Table implementation
 import json
+import math
 from copy import deepcopy
 
 from termcolor import colored
@@ -12,6 +13,7 @@ class Node:
         self.data = dict()
         self.prev = prev
         self.fingerTable = [nxt]
+        self.numberOfWrites = 0
 
     # Update the finger table of this node when necessary
     def updateFingerTable(self, dht, k):
@@ -36,6 +38,8 @@ class DHT:
     def __init__(self, k, n, logging):
         self._logging = logging
         self._insert_hash_collisions = 0
+        self._writeOperations = 0
+        self._totalMassages = 0
 
         self._k = k
         self._size = 2 ** k
@@ -110,11 +114,13 @@ class DHT:
             if self._logging:
                 print(colored("Hash collision on insert", "red"))
         nodeForKey.data[key] = value
+        nodeForKey.numberOfWrites += 1
         replicationNodes = [nodeForKey]
         while len(replicationNodes) < self._n:
             # NOTE: Hash Collisions are impossible here
             nodeForKey = nodeForKey.fingerTable[0]
             nodeForKey.data[key] = "Replication! " + str(value)
+            nodeForKey.numberOfWrites += 1
             replicationNodes.append(nodeForKey)
         return
 
@@ -154,6 +160,9 @@ class DHT:
             if self.distance(hashId, newNode.ID) < self.distance(hashId, origNode.ID):
                 del origNode.data[key]
 
+        self._writeOperations = 0
+        self._totalMassages = 0
+        self._insert_hash_collisions = 0
         return True
 
 
@@ -172,6 +181,10 @@ class DHT:
             if self._startNode == node:
                 self._startNode = node.fingerTable[0]
 
+        self._writeOperations = 0
+        self._totalMassages = 0
+        self._insert_hash_collisions = 0
+
     def updateAllFingerTables(self):
         self._startNode.updateFingerTable(self, self._k)
         curr = self._startNode.fingerTable[0]
@@ -189,17 +202,20 @@ class DHT:
     def getDataDistribution(self):
         numNodes = self.getNumNodes()
         dataSize = self.getSizeOfDataSet()
-        print(colored(str(numNodes), "green"), "\tNodes")
-        print(colored(str(dataSize), "blue"), "\tKey-Value Pairs")
-        print(colored(str(self._size), "cyan"), "\tSize")
-        print(colored(str(self._n), "yellow"), "\tReplicas")
-        print(colored(str(self._insert_hash_collisions), "red"), "\tHash Collisions occurred during data insertion")
+        if self._logging:
+            print(colored(str(numNodes), "green"), "\tNodes")
+            print(colored(str(dataSize), "blue"), "\tKey-Value Pairs")
+            print(colored(str(self._size), "cyan"), "\tSize")
+            print(colored(str(self._n), "yellow"), "\tReplicas")
+            print(colored(str(self._insert_hash_collisions), "red"), "\tHash Collisions occurred during data insertion")
 
         node = self._startNode
-        node.dataDistribution(dataSize, numNodes)
+        if self._logging:
+            node.dataDistribution(dataSize, numNodes)
         dataOnNodes = [len(node.data)]
         while node.fingerTable[0] != self._startNode:
             node = node.fingerTable[0]
-            node.dataDistribution(dataSize, numNodes)
+            if self._logging:
+                node.dataDistribution(dataSize, numNodes)
             dataOnNodes.append(len(node.data))
-        return (range(0, numNodes), dataOnNodes, (dataSize/numNodes))
+        return (range(0, numNodes), dataOnNodes, math.ceil(dataSize/numNodes))

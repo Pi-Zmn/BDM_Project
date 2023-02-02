@@ -2,6 +2,8 @@ import math
 import sys, getopt
 import time
 
+import matplotlib.pyplot as plt
+
 from PChordLib.dht import *
 from random import randint
 import hashlib
@@ -65,6 +67,7 @@ def barPlot(x, y, threshold, title, savePNG):
         filePath = 'assets/' + title + "-" + time.strftime("%Y%m%d-%H%M%S") + '.png'
         plt.savefig(filePath, dpi=300, bbox_inches='tight')
     #plt.show()
+    plt.clf()
 
 def test_hashAllocation(d, index):
     for k in index:
@@ -94,7 +97,9 @@ def main(argv):
     w = 1000000
     hasLogging = argv[5].lower() == "true"
     # calculate k to avoid hash collisions with given e
-    k = math.ceil(math.log2((e * (e-1))/2))
+    #k = math.ceil(math.log2((e * (e-1))/2))
+    # calculate k to avoid hash collisions for 4.000.000 unique values
+    k = math.ceil(math.log2((4000000 * (4000000-1))/2))
     # Create DHT Ring
     d = DHT(k, n, hasLogging)
     calculateHashCollisionEstimate(d, e)
@@ -115,30 +120,44 @@ def main(argv):
     #if distribution == "hash" and insertStrategy == "hash":
     #    test_hashAllocation(d, index)
 
+    textFile1 = open('assets/' + "writeDistribution" + "-" + time.strftime("%Y%m%d-%H%M%S") + ".txt", "w")
+    textFile2 = open('assets/' + "hashCollisions" + "-" + time.strftime("%Y%m%d-%H%M%S") + ".txt", "w")
+
     # write to a random Key
     write_workload(w, d, k, index)
+    for n in nodes:
+        textFile1.write("Node\t" + str(n.ID) + ":\t" + str(n.numberOfWrites) + " write Operations\r\n")
+    textFile1.write("--------------------------------------------------------------------\r\n")
+
+    textFile2.write("Cluster with " + str(d.getNumNodes()) + " had "
+                    + str(d._insert_hash_collisions) + " for w=" + str(w) + "\r\n")
+    textFile2.write("------------------------\r\n")
 
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
             (distribution + "_" + insertStrategy), False)
 
-    while s <= 30:
+    while s < 30:
         # add 5 servers 
-        for i in range(1,5):
+        for i in range(0,5):
             s += 1
             nodeID = d.getHashId(intHash(str(s)))
-            addNode(d, nodeID, nodes) 
+            addNode(d, nodeID, nodes)
+        d.updateAllFingerTables()
         # do workload
         write_workload(w, d, k, index)
+        for n in nodes:
+            textFile1.write("Node\t" + str(n.ID) + ":\t" + str(n.numberOfWrites) + " write Operations\r\n")
+        textFile1.write("--------------------------------------------------------------------\r\n")
+
+        textFile2.write("Cluster with " + str(d.getNumNodes()) + " had "
+                        + str(d._insert_hash_collisions) + " for w=" + str(w) + "\r\n")
+        textFile2.write("------------------------\r\n")
 
         # get distribution and create plot
-        distribution_tupel = d.getDataDistribution()    
+        distribution_tupel = d.getDataDistribution()
         barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
-        (distribution + "_" + insertStrategy), True)
-
-
-
-
+                (distribution + "_" + insertStrategy + "_" + str(s) + "Nodes"), True)
 
     #for i in range(5, 200, 10):
     #    print(d.lookup(d._startNode, i))
