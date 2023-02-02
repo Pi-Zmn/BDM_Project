@@ -18,8 +18,7 @@ def addNode(d, iD, nodes):
     while not did_create_node:
         node = Node(iD)
         did_create_node = d.join(node)
-        if did_create_node:
-            nodes.append(node)
+    nodes.append(node)
 
 # Add all Nodes to Ring
 def insertNodes(d, s, k, distribution, nodes):
@@ -80,6 +79,7 @@ def main(argv):
     s = int(argv[0]) #s = 10
     n = int(argv[1]) #n = 3
     e = int(argv[2]) #e = 10000
+    w = 1000000
     hasLogging = argv[5].lower() == "true"
     # calculate k to avoid hash collisions with given e
     k = math.ceil(math.log2((e * (e-1))/2))
@@ -88,7 +88,7 @@ def main(argv):
     calculateHashCollisionEstimate(d, e)
 
     nodes = [d._startNode]  # holds all created Node Objects
-    index = dict()          # holds all IDs of created Data
+    index = dict()          # holds all IDs with Keys of created Data
 
     distribution = argv[3] # "equal" | "random" | "hash"
     insertStrategy = argv[4] # "equal" | "random" | "hash"
@@ -98,10 +98,26 @@ def main(argv):
 
     distribution_tupel = d.getDataDistribution()
     barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
-            (distribution + "_" + insertStrategy), False)
+           (distribution + "_" + insertStrategy), False)
 
-    if distribution == "hash" and insertStrategy == "hash":
-        test_hashAllocation(d, index)
+    #if distribution == "hash" and insertStrategy == "hash":
+    #    test_hashAllocation(d, index)
+
+    # write to a random Key
+    for rW in range(1, w):
+        # check if ID already in use
+        iD = 1
+        while iD in index:
+            iD = randint(0, int(math.pow(2, k) - 1))
+        key = d.getHashId(intHash(str(iD)))
+        value = "Random Value-" + str(rW)
+        d.store(d._startNode, key, value, True)
+        if (rW % 500000 == 0):
+            print("writing random data...")
+
+    distribution_tupel = d.getDataDistribution()
+    barPlot(distribution_tupel[0], distribution_tupel[1], distribution_tupel[2],
+            (distribution + "_" + insertStrategy), False)
 
     #for i in range(5, 200, 10):
     #    print(d.lookup(d._startNode, i))
@@ -109,6 +125,9 @@ def main(argv):
     #for n in nodes:
      #   n.toString()
     #    n.dataDistribution(e, s)
+        #print(colored("Node " + str(n.ID), "green"), " has " + str(len(n.fingerTable)) + " Fingertable entrys")
+        #for f in n.fingerTable:
+        #    print(colored("\t" + str(f.ID), "blue"))
 
 if __name__ == "__main__":
    main(sys.argv[1:])
